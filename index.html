@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Custo de Vida</title>
+    <meta name="theme-color" content="#4338ca"/>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .animate-enter { opacity: 0; transform: scale(0.95); transition: all 0.3s ease-out; }
+        .animate-enter-active { opacity: 1; transform: scale(1); }
+        .calculation-breakdown { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 1rem; align-items: center; }
+        .calculation-breakdown dt { text-align: right; color: #4A5568; }
+        .calculation-breakdown dd { font-weight: 600; color: #2D3748; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-4xl">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Calculadora de Custo de Vida</h1>
+            <p class="text-md text-gray-600 mt-2">Descubra quantos dias de trabalho você dedica para pagar suas despesas.</p>
+        </header>
+
+        <main class="space-y-8">
+            <!-- Passo 1: Renda -->
+            <section id="income-config" class="bg-white p-6 rounded-xl shadow-md">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Passo 1: Sua Renda</h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="monthly-salary" class="block text-sm font-medium text-gray-700 mb-1">Seu Salário Mensal Líquido (R$)</label>
+                        <input type="number" id="monthly-salary" placeholder="Ex: 3000" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                        <p class="text-xs text-gray-500 mt-1">Seu salário após os impostos.</p>
+                    </div>
+                    <div>
+                        <label for="days-per-week" class="block text-sm font-medium text-gray-700 mb-1">Dias de Trabalho por Semana</label>
+                        <input type="number" id="days-per-week" value="5" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                        <p class="text-xs text-gray-500 mt-1">O cálculo considera 48 semanas de trabalho no ano.</p>
+                    </div>
+                </div>
+                <div id="daily-earning-result" class="mt-6 p-4 bg-blue-50 rounded-lg text-left hidden space-y-2">
+                    <p class="text-md text-blue-800 leading-relaxed">
+                        Com um salário mensal de <strong id="summary-monthly-salary" class="text-blue-900">R$ 0,00</strong>, seu ganho anual totaliza <strong id="summary-annual-salary" class="text-blue-900">R$ 0,00</strong>.
+                        Considerando <strong id="summary-working-days" class="text-blue-900">0</strong> dias de trabalho no ano (<strong id="summary-days-per-week" class="text-blue-900">0</strong> dias/semana), seu ganho diário é de:
+                    </p>
+                    <p class="text-center text-2xl font-bold text-blue-900 pt-1" id="summary-daily-earning">R$ 0,00</p>
+                </div>
+            </section>
+
+            <!-- Passo 2: Despesas -->
+            <section id="expense-form-section" class="bg-white p-6 rounded-xl shadow-md">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Passo 2: Adicionar Despesas</h2>
+                <form id="expense-form" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="expense-category" class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+                        <select id="expense-category" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                            <option>Moradia</option><option>Transporte</option><option>Alimentação</option><option>Lazer</option><option>Saúde</option><option>Educação</option><option>Dívidas</option><option>Outros</option>
+                        </select>
+                    </div>
+                     <div>
+                        <label for="expense-type" class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+                        <select id="expense-type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                            <option value="Fixo">Fixo (Essencial)</option><option value="Compromisso">Compromisso (Parcela)</option><option value="Variável">Variável (Discricionário)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="expense-name" class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                        <input type="text" id="expense-name" placeholder="Ex: Aluguel" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    </div>
+                    <div>
+                        <label for="expense-amount" class="block text-sm font-medium text-gray-700 mb-1">Valor Mensal (R$)</label>
+                        <input type="number" id="expense-amount" placeholder="Ex: 1500" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-2.5 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">Adicionar Despesa</button>
+                    </div>
+                </form>
+                 <p id="form-error" class="text-red-500 text-sm mt-2 text-center hidden">Por favor, preencha todos os campos e a sua renda diária.</p>
+            </section>
+            
+            <!-- Passo 3: Análise -->
+            <section id="expense-analysis" class="bg-white p-6 rounded-xl shadow-md">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 border-b pb-4 gap-4">
+                    <h2 class="text-2xl font-semibold text-gray-800">Passo 3: Sua Análise</h2>
+                    <div>
+                        <label for="calculation-mode" class="block text-sm font-medium text-gray-700 mb-1">Modo de Análise</label>
+                        <select id="calculation-mode" class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                            <option value="padrao">Visão Padrão (Custo Real)</option><option value="discricionario">Visão Custo Discricionário</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="mode-explanation" class="p-3 mb-4 bg-gray-100 rounded-lg text-sm text-gray-700"></div>
+                <div id="discretionary-calculation-breakdown" class="p-4 mb-4 bg-yellow-50 border border-yellow-200 rounded-lg hidden"></div>
+                <div id="expenses-list" class="space-y-3">
+                    <p class="text-gray-500 text-center py-4">Nenhuma despesa adicionada ainda.</p>
+                </div>
+                <div id="summary" class="mt-8 border-t-2 border-gray-200 pt-6 space-y-4 hidden">
+                    <div class="grid sm:grid-cols-2 gap-4">
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                             <span class="font-semibold text-gray-700 text-sm">Total dias p/ pagar despesas (mensal):</span>
+                            <span id="total-days-monthly" class="block font-bold text-xl text-blue-600">0.0 dias</span>
+                            <p id="total-days-monthly-desc" class="text-xs text-gray-500 mt-1"></p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <span class="font-semibold text-gray-700 text-sm">Total dias p/ pagar despesas (anual):</span>
+                            <span id="total-days-annual" class="block font-bold text-xl text-blue-600">0.0 dias</span>
+                            <p id="total-days-annual-desc" class="text-xs text-gray-500 mt-1"></p>
+                        </div>
+                    </div>
+                     <div class="grid sm:grid-cols-2 gap-4">
+                        <div class="p-4 bg-green-50 rounded-lg">
+                            <span class="font-semibold text-green-800 text-sm">Dias que você trabalha para si (mensal):</span>
+                            <span id="remaining-days-monthly" class="block font-bold text-xl text-green-600">0.0 dias</span>
+                            <p id="remaining-days-monthly-desc" class="text-xs text-gray-500 mt-1"></p>
+                        </div>
+                         <div class="p-4 bg-green-50 rounded-lg">
+                            <span class="font-semibold text-green-800 text-sm">Dias que você trabalha para si (anual):</span>
+                            <span id="remaining-days-annual" class="block font-bold text-xl text-green-600">0.0 dias</span>
+                            <p id="remaining-days-annual-desc" class="text-xs text-gray-500 mt-1"></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="text-center mt-12 text-sm text-gray-500">
+            <p>&copy; 2024 Calculadora de Custo de Vida.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(registration => {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                }, err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const monthlySalaryInput = document.getElementById('monthly-salary');
+            const daysPerWeekInput = document.getElementById('days-per-week');
+            const dailyEarningResult = document.getElementById('daily-earning-result');
+            const summaryMonthlySalary = document.getElementById('summary-monthly-salary');
+            const summaryAnnualSalary = document.getElementById('summary-annual-salary');
+            const summaryWorkingDays = document.getElementById('summary-working-days');
+            const summaryDaysPerWeek = document.getElementById('summary-days-per-week');
+            const summaryDailyEarning = document.getElementById('summary-daily-earning');
+            const expenseForm = document.getElementById('expense-form');
+            const expenseCategoryInput = document.getElementById('expense-category');
+            const expenseTypeInput = document.getElementById('expense-type');
+            const expenseNameInput = document.getElementById('expense-name');
+            const expenseAmountInput = document.getElementById('expense-amount');
+            const formError = document.getElementById('form-error');
+            const calculationModeSelect = document.getElementById('calculation-mode');
+            const modeExplanation = document.getElementById('mode-explanation');
+            const discretionaryBreakdown = document.getElementById('discretionary-calculation-breakdown');
+            const expensesList = document.getElementById('expenses-list');
+            const summary = document.getElementById('summary');
+            const totalDaysMonthly = document.getElementById('total-days-monthly');
+            const totalDaysAnnual = document.getElementById('total-days-annual');
+            const remainingDaysMonthly = document.getElementById('remaining-days-monthly');
+            const remainingDaysAnnual = document.getElementById('remaining-days-annual');
+            const totalDaysMonthlyDesc = document.getElementById('total-days-monthly-desc');
+            const totalDaysAnnualDesc = document.getElementById('total-days-annual-desc');
+            const remainingDaysMonthlyDesc = document.getElementById('remaining-days-monthly-desc');
+            const remainingDaysAnnualDesc = document.getElementById('remaining-days-annual-desc');
+
+            let state = {
+                monthlySalary: 0,
+                annualSalary: 0,
+                workingDays: 0,
+                dailyEarning: 0,
+                calculationMode: 'padrao',
+                expenses: []
+            };
+
+            const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+            const formatDays = (value) => new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value);
+
+            function saveData() {
+                const dataToSave = {
+                    monthlySalary: monthlySalaryInput.value,
+                    daysPerWeek: daysPerWeekInput.value,
+                    expenses: state.expenses,
+                    calculationMode: state.calculationMode
+                };
+                localStorage.setItem('costOfLifeCalculator', JSON.stringify(dataToSave));
+            }
+
+            function loadData() {
+                const savedData = localStorage.getItem('costOfLifeCalculator');
+                if (savedData) {
+                    const data = JSON.parse(savedData);
+                    monthlySalaryInput.value = data.monthlySalary || '';
+                    daysPerWeekInput.value = data.daysPerWeek || '5';
+                    state.expenses = data.expenses || [];
+                    calculationModeSelect.value = data.calculationMode || 'padrao';
+                    state.calculationMode = calculationModeSelect.value;
+                }
+                calculateDailyEarning();
+            }
+
+            function calculateDailyEarning() {
+                state.monthlySalary = parseFloat(monthlySalaryInput.value) || 0;
+                const daysPerWeek = parseInt(daysPerWeekInput.value) || 0;
+                state.annualSalary = state.monthlySalary * 12;
+                state.workingDays = daysPerWeek * 48;
+
+                if (state.annualSalary > 0 && state.workingDays > 0) {
+                    state.dailyEarning = state.annualSalary / state.workingDays;
+                    summaryMonthlySalary.textContent = formatCurrency(state.monthlySalary);
+                    summaryAnnualSalary.textContent = formatCurrency(state.annualSalary);
+                    summaryWorkingDays.textContent = state.workingDays;
+                    summaryDaysPerWeek.textContent = daysPerWeek;
+                    summaryDailyEarning.textContent = formatCurrency(state.dailyEarning);
+                    dailyEarningResult.classList.remove('hidden');
+                } else {
+                    state.dailyEarning = 0;
+                    dailyEarningResult.classList.add('hidden');
+                }
+                render();
+                saveData();
+            }
+
+            function addExpense(e) {
+                e.preventDefault();
+                const name = expenseNameInput.value.trim();
+                const amount = parseFloat(expenseAmountInput.value) || 0;
+
+                if (!name || amount <= 0 || state.dailyEarning <= 0) {
+                    formError.classList.remove('hidden');
+                    return;
+                }
+                
+                formError.classList.add('hidden');
+                state.expenses.push({ id: Date.now(), category: expenseCategoryInput.value, name, amount, type: expenseTypeInput.value });
+                
+                expenseNameInput.value = '';
+                expenseAmountInput.value = '';
+                expenseNameInput.focus();
+                render();
+                saveData();
+            }
+            
+            function deleteExpense(id) {
+                state.expenses = state.expenses.filter(exp => exp.id !== id);
+                render();
+                saveData();
+            }
+
+            function render() {
+                const totalMonthlyExpenses = state.expenses.reduce((sum, e) => sum + e.amount, 0);
+                const workingDaysPerMonth = state.workingDays / 12;
+                
+                const totalCommittedMonthly = state.expenses.filter(e => e.type === 'Fixo' || e.type === 'Compromisso').reduce((sum, e) => sum + e.amount, 0);
+                const discretionaryIncome = state.monthlySalary - totalCommittedMonthly;
+                let discretionaryDailyEarning = (discretionaryIncome > 0 && workingDaysPerMonth > 0) ? discretionaryIncome / workingDaysPerMonth : 0;
+                
+                if (state.calculationMode === 'padrao') {
+                    modeExplanation.innerHTML = `<strong>Visão Padrão:</strong> Cada despesa é medida contra o seu ganho diário total.`;
+                    discretionaryBreakdown.classList.add('hidden');
+                } else {
+                    modeExplanation.innerHTML = `<strong>Visão Discricionária:</strong> Despesas <strong>variáveis</strong> são medidas contra o dinheiro que sobra após pagar os custos <strong>Fixos</strong> e <strong>Compromissos</strong>.`;
+                    discretionaryBreakdown.innerHTML = `<h4 class="text-md font-semibold text-yellow-900 mb-2 col-span-2">Cálculo do Ganho Diário Discricionário</h4><dl class="calculation-breakdown text-sm"><dt>Salário Mensal:</dt> <dd>${formatCurrency(state.monthlySalary)}</dd><dt>(-) Despesas Fixas/Compromissos:</dt> <dd>${formatCurrency(totalCommittedMonthly)}</dd><dt>Renda Discricionária Mensal:</dt> <dd class="border-t border-yellow-300 pt-1">${formatCurrency(discretionaryIncome)}</dd><dt>(÷) Dias de Trabalho no Mês:</dt> <dd>${formatDays(workingDaysPerMonth)}</dd><dt class="text-yellow-900">Ganho Diário Discricionário:</dt> <dd class="text-yellow-900 border-t border-yellow-300 pt-1">${formatCurrency(discretionaryDailyEarning)}</dd></dl>`;
+                    discretionaryBreakdown.classList.remove('hidden');
+                }
+
+                if (state.expenses.length === 0) {
+                    expensesList.innerHTML = `<p class="text-gray-500 text-center py-4">Nenhuma despesa adicionada ainda.</p>`;
+                    summary.classList.add('hidden');
+                    return;
+                }
+
+                const expensesWithCalculations = state.expenses.map(expense => {
+                    let earningRate = state.dailyEarning;
+                    if (state.calculationMode === 'discricionario' && expense.type === 'Variável') {
+                         earningRate = discretionaryDailyEarning > 0 ? discretionaryDailyEarning : Infinity;
+                    }
+                    const daysToPayMonthly = earningRate > 0 ? expense.amount / earningRate : Infinity;
+                    return { ...expense, daysToPayMonthly, daysToPayAnnual: daysToPayMonthly * 12 };
+                });
+
+                expensesList.innerHTML = '';
+                expensesWithCalculations.forEach(expense => {
+                    let typeIndicator;
+                    switch (expense.type) {
+                        case 'Fixo': typeIndicator = `<span class="text-xs font-semibold bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full">Fixo</span>`; break;
+                        case 'Compromisso': typeIndicator = `<span class="text-xs font-semibold bg-orange-200 text-orange-800 px-2 py-0.5 rounded-full">Compromisso</span>`; break;
+                        case 'Variável': typeIndicator = `<span class="text-xs font-semibold bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full">Variável</span>`; break;
+                    }
+                    const expenseEl = document.createElement('div');
+                    expenseEl.className = 'flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 animate-enter';
+                    expenseEl.innerHTML = `<div class="flex-1 space-y-1"><p class="font-semibold text-gray-800">${expense.name}</p><div class="flex items-center gap-2 flex-wrap">${typeIndicator}<p class="text-sm text-gray-500">${expense.category} - ${formatCurrency(expense.amount)}/mês</p></div></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 text-right ml-4 w-auto sm:w-48"><div><p class="font-bold text-lg text-blue-600">${isFinite(expense.daysToPayMonthly) ? formatDays(expense.daysToPayMonthly) : '∞'} dias</p><p class="text-sm text-gray-500">/ mês</p></div><div class="mt-2 sm:mt-0"><p class="font-bold text-lg text-blue-600">${isFinite(expense.daysToPayAnnual) ? formatDays(expense.daysToPayAnnual) : '∞'} dias</p><p class="text-sm text-gray-500">/ ano</p></div></div><button data-id="${expense.id}" class="delete-btn ml-4 text-gray-400 hover:text-red-500 transition-colors p-2 rounded-full flex-shrink-0"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256"><path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"></path></svg></button>`;
+                    setTimeout(() => expenseEl.classList.add('animate-enter-active'), 10);
+                    expensesList.appendChild(expenseEl);
+                });
+                
+                const totalMonthlyDaysWorked = expensesWithCalculations.reduce((sum, exp) => sum + exp.daysToPayMonthly, 0);
+                const totalAnnualDaysWorked = expensesWithCalculations.reduce((sum, exp) => sum + exp.daysToPayAnnual, 0);
+                const remainingMonthly = workingDaysPerMonth - totalMonthlyDaysWorked;
+                const remainingAnnual = state.workingDays - totalAnnualDaysWorked;
+                
+                totalDaysMonthly.textContent = `${isFinite(totalMonthlyDaysWorked) ? formatDays(totalMonthlyDaysWorked) : '∞'} dias`;
+                totalDaysAnnual.textContent = `${isFinite(totalAnnualDaysWorked) ? formatDays(totalAnnualDaysWorked) : '∞'} dias`;
+                remainingDaysMonthly.textContent = `${isFinite(remainingMonthly) ? formatDays(remainingMonthly) : '∞'} dias`;
+                remainingDaysAnnual.textContent = `${isFinite(remainingAnnual) ? formatDays(remainingAnnual) : '∞'} dias`;
+
+                if (state.calculationMode === 'padrao') {
+                    totalDaysMonthlyDesc.innerHTML = `Despesas (${formatCurrency(totalMonthlyExpenses)}) ÷ ganho diário (${formatCurrency(state.dailyEarning)}).`;
+                    remainingDaysMonthlyDesc.innerHTML = `Dias úteis/mês (${formatDays(workingDaysPerMonth)}) - dias p/ pagar.`;
+                } else {
+                    totalDaysMonthlyDesc.innerHTML = `Soma dos dias de cada despesa (com régua discricionária).`;
+                    remainingDaysMonthlyDesc.innerHTML = `Dias úteis/mês (${formatDays(workingDaysPerMonth)}) - dias p/ pagar.`;
+                }
+                totalDaysAnnualDesc.innerHTML = `Projeção anual do cálculo mensal.`;
+                remainingDaysAnnualDesc.innerHTML = `Dias úteis/ano (${formatDays(state.workingDays)}) - dias p/ pagar.`;
+
+                summary.classList.remove('hidden');
+            }
+
+            monthlySalaryInput.addEventListener('input', calculateDailyEarning);
+            daysPerWeekInput.addEventListener('input', calculateDailyEarning);
+            expenseForm.addEventListener('submit', addExpense);
+            calculationModeSelect.addEventListener('change', (e) => {
+                state.calculationMode = e.target.value;
+                render();
+                saveData();
+            });
+            expensesList.addEventListener('click', (e) => {
+                const deleteBtn = e.target.closest('.delete-btn');
+                if (deleteBtn) deleteExpense(parseInt(deleteBtn.dataset.id, 10));
+            });
+
+            loadData();
+        });
+    </script>
+
+</body>
+</html>
