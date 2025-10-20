@@ -130,6 +130,7 @@
 
         <footer class="text-center mt-12 text-sm text-gray-500">
             <p>&copy; 2024 Calculadora de Custo de Vida.</p>
+            <button id="clear-data-btn" class="mt-4 text-blue-600 hover:text-blue-800 text-xs underline">Limpar Todos os Dados</button>
         </footer>
     </div>
 
@@ -173,6 +174,7 @@
             const totalDaysAnnualDesc = document.getElementById('total-days-annual-desc');
             const remainingDaysMonthlyDesc = document.getElementById('remaining-days-monthly-desc');
             const remainingDaysAnnualDesc = document.getElementById('remaining-days-annual-desc');
+            const clearDataBtn = document.getElementById('clear-data-btn');
 
             let state = {
                 monthlySalary: 0,
@@ -207,6 +209,13 @@
                     state.calculationMode = calculationModeSelect.value;
                 }
                 calculateDailyEarning();
+            }
+
+            function clearData() {
+                // Adicionar uma confirmação é uma boa prática para evitar exclusão acidental.
+                // Ex: if (confirm("Tem certeza que deseja apagar todos os dados? Esta ação não pode ser desfeita.")) { ... }
+                localStorage.removeItem('costOfLifeCalculator');
+                location.reload();
             }
 
             function calculateDailyEarning() {
@@ -339,6 +348,7 @@
                 const deleteBtn = e.target.closest('.delete-btn');
                 if (deleteBtn) deleteExpense(parseInt(deleteBtn.dataset.id, 10));
             });
+            clearDataBtn.addEventListener('click', clearData);
 
             loadData();
         });
@@ -346,3 +356,4 @@
 
 </body>
 </html>
+
