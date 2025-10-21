@@ -1,2 +1,3 @@
 # calculadora-custo
-Calculadora que identifica os dias de trabalho que são necessários para adquirir ou pagar itens do dia a dia.
+Calculadora de Custo de Vida
+Descubra quantos dias de trabalho você dedica para pagar suas despesas.
