@@ -7,6 +7,8 @@
     <meta name="theme-color" content="#4338ca"/>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -99,6 +101,15 @@
                 <div id="expenses-list" class="space-y-3">
                     <p class="text-gray-500 text-center py-4">Nenhuma despesa adicionada ainda.</p>
                 </div>
+                
+                <!-- Gráfico de Categorias -->
+                <div id="chart-container" class="mt-8 border-t-2 border-gray-200 pt-6 hidden">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4 text-center">Dias de Trabalho por Categoria (Mensal)</h3>
+                    <div>
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+
                 <div id="summary" class="mt-8 border-t-2 border-gray-200 pt-6 space-y-4 hidden">
                     <div class="grid sm:grid-cols-2 gap-4">
                         <div class="p-4 bg-gray-50 rounded-lg">
@@ -175,6 +186,9 @@
             const remainingDaysMonthlyDesc = document.getElementById('remaining-days-monthly-desc');
             const remainingDaysAnnualDesc = document.getElementById('remaining-days-annual-desc');
             const clearDataBtn = document.getElementById('clear-data-btn');
+            const chartContainer = document.getElementById('chart-container');
+            const categoryChartCanvas = document.getElementById('categoryChart');
+            let categoryChart = null;
 
             let state = {
                 monthlySalary: 0,
@@ -212,10 +226,10 @@
             }
 
             function clearData() {
-                // Adicionar uma confirmação é uma boa prática para evitar exclusão acidental.
-                // Ex: if (confirm("Tem certeza que deseja apagar todos os dados? Esta ação não pode ser desfeita.")) { ... }
-                localStorage.removeItem('costOfLifeCalculator');
-                location.reload();
+                if (confirm("Tem certeza que deseja apagar todos os dados? Esta ação não pode ser desfeita.")) {
+                    localStorage.removeItem('costOfLifeCalculator');
+                    location.reload();
+                }
             }
 
             function calculateDailyEarning() {
@@ -266,9 +280,77 @@
                 saveData();
             }
 
+            function updateChart(expensesWithCalculations) {
+                if(state.expenses.length === 0) {
+                    chartContainer.classList.add('hidden');
+                    return;
+                }
+                chartContainer.classList.remove('hidden');
+
+                const categoryData = expensesWithCalculations.reduce((acc, expense) => {
+                    if (!acc[expense.category]) {
+                        acc[expense.category] = 0;
+                    }
+                    if(isFinite(expense.daysToPayMonthly)){
+                       acc[expense.category] += expense.daysToPayMonthly;
+                    }
+                    return acc;
+                }, {});
+
+                const sortedCategories = Object.keys(categoryData).sort((a, b) => categoryData[b] - categoryData[a]);
+                const chartLabels = sortedCategories;
+                const chartValues = sortedCategories.map(category => categoryData[category]);
+                
+                if (categoryChart) {
+                    categoryChart.data.labels = chartLabels;
+                    categoryChart.data.datasets[0].data = chartValues;
+                    categoryChart.update();
+                } else {
+                    categoryChart = new Chart(categoryChartCanvas, {
+                        type: 'bar',
+                        data: {
+                            labels: chartLabels,
+                            datasets: [{
+                                label: 'Dias de Trabalho por Mês',
+                                data: chartValues,
+                                backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                                borderColor: 'rgba(59, 130, 246, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y',
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return `${context.dataset.label}: ${formatDays(context.raw)} dias`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Dias'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+
             function render() {
                 const totalMonthlyExpenses = state.expenses.reduce((sum, e) => sum + e.amount, 0);
-                const workingDaysPerMonth = state.workingDays / 12;
+                const workingDaysPerMonth = state.workingDays > 0 ? state.workingDays / 12 : 0;
                 
                 const totalCommittedMonthly = state.expenses.filter(e => e.type === 'Fixo' || e.type === 'Compromisso').reduce((sum, e) => sum + e.amount, 0);
                 const discretionaryIncome = state.monthlySalary - totalCommittedMonthly;
@@ -286,6 +368,7 @@
                 if (state.expenses.length === 0) {
                     expensesList.innerHTML = `<p class="text-gray-500 text-center py-4">Nenhuma despesa adicionada ainda.</p>`;
                     summary.classList.add('hidden');
+                    updateChart([]);
                     return;
                 }
 
@@ -334,6 +417,7 @@
                 remainingDaysAnnualDesc.innerHTML = `Dias úteis/ano (${formatDays(state.workingDays)}) - dias p/ pagar.`;
 
                 summary.classList.remove('hidden');
+                updateChart(expensesWithCalculations);
             }
 
             monthlySalaryInput.addEventListener('input', calculateDailyEarning);
