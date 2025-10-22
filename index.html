@@ -387,12 +387,41 @@
                 const discretionaryIncome = state.monthlySalary - totalCommittedMonthly;
                 let discretionaryDailyEarning = (discretionaryIncome > 0 && workingDaysPerMonth > 0) ? discretionaryIncome / workingDaysPerMonth : 0;
                 
+                // --- NOVO CÁLCULO (V2.0) ---
+                let reductionPercentage = 0;
+                if (state.dailyEarning > 0) {
+                    let reduction = (state.dailyEarning - discretionaryDailyEarning) / state.dailyEarning;
+                    if (reduction < 0) reduction = 0; // Se o discricionário for maior (raro, mas seguro)
+                    if (reduction > 1) reduction = 1; // Capa em 100%
+                    reductionPercentage = reduction * 100;
+                }
+                // --- FIM DO NOVO CÁLCULO ---
+
                 if (state.calculationMode === 'padrao') {
                     modeExplanation.innerHTML = `<strong>Visão Padrão:</strong> Cada despesa é medida contra o seu ganho diário total.`;
                     discretionaryBreakdown.classList.add('hidden');
                 } else {
                     modeExplanation.innerHTML = `<strong>Visão Discricionária:</strong> Despesas <strong>variáveis</strong> são medidas contra o dinheiro que sobra após pagar os custos <strong>Fixos</strong> e <strong>Compromissos</strong>.`;
-                    discretionaryBreakdown.innerHTML = `<h4 class="text-md font-semibold text-yellow-900 mb-2 col-span-2">Cálculo do Ganho Diário Discricionário</h4><dl class="calculation-breakdown text-sm"><dt>Salário Mensal:</dt> <dd>${formatCurrency(state.monthlySalary)}</dd><dt>(-) Despesas Fixas/Compromissos:</dt> <dd>${formatCurrency(totalCommittedMonthly)}</dd><dt>Renda Discricionária Mensal:</dt> <dd class="border-t border-yellow-300 pt-1">${formatCurrency(discretionaryIncome)}</dd><dt>(÷) Dias de Trabalho no Mês:</dt> <dd>${formatDays(workingDaysPerMonth)}</dd><dt class="text-yellow-900">Ganho Diário Discricionário:</dt> <dd class="text-yellow-900 border-t border-yellow-300 pt-1">${formatCurrency(discretionaryDailyEarning)}</dd></dl>`;
+                    
+                    // --- HTML ATUALIZADO (V2.0) ---
+                    discretionaryBreakdown.innerHTML = `
+                        <h4 class="text-md font-semibold text-yellow-900 mb-2 col-span-2">Cálculo do Ganho Diário Discricionário</h4>
+                        <dl class="calculation-breakdown text-sm">
+                            <dt>Salário Mensal:</dt> <dd>${formatCurrency(state.monthlySalary)}</dd>
+                            <dt>(-) Despesas Fixas/Compromissos:</dt> <dd>${formatCurrency(totalCommittedMonthly)}</dd>
+                            <dt>Renda Discricionária Mensal:</dt> <dd class="border-t border-yellow-300 pt-1">${formatCurrency(discretionaryIncome)}</dd>
+                            <dt>(÷) Dias de Trabalho no Mês:</dt> <dd>${formatDays(workingDaysPerMonth)}</dd>
+                            <dt class="text-yellow-900">Ganho Diário Discricionário:</dt> <dd class="text-yellow-900 border-t border-yellow-300 pt-1">${formatCurrency(discretionaryDailyEarning)}</dd>
+                            
+                            <dt class="text-red-700 font-medium pt-2">Redução do Poder de Compra:</dt>
+                            <dd class="text-red-700 font-bold text-base pt-2">${formatDays(reductionPercentage)}%</dd>
+                        </dl>
+                        <p class="text-xs text-gray-600 mt-3 col-span-2">
+                            *A "Redução" mostra quanto os seus custos fixos/compromissos diminuem o valor do seu dia de trabalho para pagar gastos variáveis.
+                        </p>
+                    `;
+                    // --- FIM DO HTML ATUALIZADO ---
+
                     discretionaryBreakdown.classList.remove('hidden');
                 }
 
@@ -471,3 +500,4 @@
 
 </body>
 </html>
+
