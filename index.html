@@ -43,6 +43,14 @@
         .calculation-breakdown { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 1rem; align-items: center; }
         .calculation-breakdown dt { text-align: right; color: #4A5568; }
         .calculation-breakdown dd { font-weight: 600; color: #2D3748; }
+        
+        /* Estilos do Modal Pix */
+        #pix-modal-backdrop {
+            transition: opacity 0.3s ease-out;
+        }
+        #pix-modal-content {
+            transition: all 0.3s ease-out;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -91,7 +99,9 @@
                      <div>
                         <label for="expense-type" class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
                         <select id="expense-type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
-                            <option value="Fixo">Fixo (Essencial)</option><option value="Compromisso">Compromisso (Parcela)</option><option value="Variável">Variável (Discricionário)</option>
+                            <option value="Fixo">Fixo (Essencial)</option><option value="Compromisso">Compromisso (Parcela)</option>
+                            <!-- V2.3: Mudança de termo -->
+                            <option value="Variável">Variável (Gasto Livre)</option> 
                         </select>
                     </div>
                     <div>
@@ -115,12 +125,15 @@
                     <div>
                         <label for="calculation-mode" class="block text-sm font-medium text-gray-700 mb-1">Modo de Análise</label>
                         <select id="calculation-mode" class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
-                            <option value="padrao">Visão Padrão (Custo Real)</option><option value="discricionario">Visão Custo Discricionário</option>
+                            <option value="padrao">Visão Padrão (Custo Real)</option>
+                            <!-- V2.3: Mudança de termo -->
+                            <option value="livre">Visão Custo Livre</option> 
                         </select>
                     </div>
                 </div>
                 <div id="mode-explanation" class="p-3 mb-4 bg-gray-100 rounded-lg text-sm text-gray-700"></div>
-                <div id="discretionary-calculation-breakdown" class="p-4 mb-4 bg-yellow-50 border border-yellow-200 rounded-lg hidden"></div>
+                <!-- V2.3: Mudança de ID e texto -->
+                <div id="free-cost-calculation-breakdown" class="p-4 mb-4 bg-yellow-50 border border-yellow-200 rounded-lg hidden"></div>
                 <div id="expenses-list" class="space-y-3">
                     <p class="text-gray-500 text-center py-4">Nenhuma despesa adicionada ainda.</p>
                 </div>
@@ -164,6 +177,11 @@
         <footer class="text-center mt-12 text-sm text-gray-500">
             <p>&copy; 2024 Calculadora de Custo de Vida.</p>
             <div class="mt-4 flex justify-center items-center gap-4 flex-wrap">
+                 <!-- Botão de Doação -->
+                 <button id="donate-btn" class="inline-flex items-center bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-semibold py-2 px-4 rounded-lg text-sm transition-colors transform hover:scale-105">
+                    <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256"><path d="M208,80H176V56a40,40,0,0,0-40-40H120A40,40,0,0,0,80,56V80H48A24,24,0,0,0,24,104v88a24,24,0,0,0,24,24H208a24,24,0,0,0,24-24V104A24,24,0,0,0,208,80ZM96,56a24,24,0,0,1,24-24h16a24,24,0,0,1,24,24V80H96ZM208,200H48V104H80v16a8,8,0,0,0,16,0V104h64v16a8,8,0,0,0,16,0V104h32Z"></path></svg>
+                    Pague-me um café
+                 </button>
                  <a href="https://forms.gle/SDBvGRHsE7tLvqtP8" target="_blank" rel="noopener noreferrer" class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg text-sm transition-colors">
                     <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256"><path d="M224,48H32a8,8,0,0,0-8,8V160a8,8,0,0,0,8,8H80v32a8,8,0,0,0,13.66,5.66L128,176h96a8,8,0,0,0,8-8V56A8,8,0,0,0,224,48ZM96,160H40V64H216v96H128a8,8,0,0,0-5.66,2.34L96,188.69Z"></path></svg>
                     Enviar Feedback
@@ -175,6 +193,38 @@
             </div>
         </footer>
     </div>
+
+    <!-- Modal Pix (V2.3 - Sem QR Code) -->
+    <div id="pix-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <!-- Backdrop -->
+        <div id="pix-modal-backdrop" class="fixed inset-0 bg-black/60 opacity-0"></div>
+        
+        <!-- Conteúdo do Modal -->
+        <div id="pix-modal-content" class="relative bg-white w-full max-w-sm p-6 rounded-xl shadow-2xl opacity-0 transform scale-95">
+            <!-- Botão de Fechar -->
+            <button id="pix-modal-close" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256"><path d="M208.49,191.51a12,12,0,0,1-17,17L128,145,64.49,208.49a12,12,0,0,1-17-17L111,128,47.51,64.49a12,12,0,0,1,17-17L128,111l63.51-63.52a12,12,0,0,1,17,17L145,128Z"></path></svg>
+            </button>
+            
+            <div class="text-center">
+                <h3 class="text-xl font-semibold text-gray-900">Obrigado pelo apoio!</h3>
+                <p class="text-sm text-gray-600 mt-4 mb-4">Copie a chave Pix abaixo e cole na sua app bancária:</p>
+                                
+                <!-- Chave Copiável -->
+                <div>
+                    <label for="pix-key-input" class="sr-only">Chave Pix Aleatória</label> <!-- sr-only para acessibilidade -->
+                    <div class="flex">
+                        <input id="pix-key-input" type="text" readonly value="f9ca577a-ab49-4003-918c-ef524d56abc3" class="w-full px-3 py-2 border border-gray-300 bg-gray-50 rounded-l-lg text-sm text-gray-600 truncate">
+                        <button id="pix-copy-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-lg text-sm font-medium transition-colors">
+                            Copiar
+                        </button>
+                    </div>
+                    <span id="pix-copy-feedback" class="text-xs text-green-600 mt-1 hidden">Chave copiada!</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <script>
         // Service Worker Registration
@@ -205,7 +255,8 @@
             const formError = document.getElementById('form-error');
             const calculationModeSelect = document.getElementById('calculation-mode');
             const modeExplanation = document.getElementById('mode-explanation');
-            const discretionaryBreakdown = document.getElementById('discretionary-calculation-breakdown');
+             // V2.3: Mudança de ID
+            const freeCostBreakdown = document.getElementById('free-cost-calculation-breakdown'); 
             const expensesList = document.getElementById('expenses-list');
             const summary = document.getElementById('summary');
             const totalDaysMonthly = document.getElementById('total-days-monthly');
@@ -221,17 +272,29 @@
             const categoryChartCanvas = document.getElementById('categoryChart');
             let categoryChart = null;
 
+            // Variáveis do Modal Pix
+            const donateBtn = document.getElementById('donate-btn');
+            const pixModal = document.getElementById('pix-modal');
+            const pixModalBackdrop = document.getElementById('pix-modal-backdrop');
+            const pixModalContent = document.getElementById('pix-modal-content');
+            const pixModalClose = document.getElementById('pix-modal-close');
+            const pixKeyInput = document.getElementById('pix-key-input');
+            const pixCopyBtn = document.getElementById('pix-copy-btn');
+            const pixCopyFeedback = document.getElementById('pix-copy-feedback');
+
             let state = {
                 monthlySalary: 0,
                 annualSalary: 0,
                 workingDays: 0,
                 dailyEarning: 0,
-                calculationMode: 'padrao',
+                // V2.3: O valor inicial pode ser 'padrao' ou 'livre'
+                calculationMode: 'padrao', 
                 expenses: []
             };
 
             const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
             const formatDays = (value) => new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value);
+            const formatPercent = (value) => new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 1 }).format(value);
 
             function saveData() {
                 const dataToSave = {
@@ -250,10 +313,10 @@
                     monthlySalaryInput.value = data.monthlySalary || '';
                     daysPerWeekInput.value = data.daysPerWeek || '5';
                     state.expenses = data.expenses || [];
-                    calculationModeSelect.value = data.calculationMode || 'padrao';
+                    calculationModeSelect.value = data.calculationMode || 'padrao'; // Carrega a preferência salva
                     state.calculationMode = calculationModeSelect.value;
                 }
-                calculateDailyEarning();
+                calculateDailyEarning(); // Calcula e renderiza com os dados carregados
             }
 
             function clearData() {
@@ -281,8 +344,8 @@
                     state.dailyEarning = 0;
                     dailyEarningResult.classList.add('hidden');
                 }
-                render();
-                saveData();
+                render(); // Chama render APÓS calcular dailyEarning
+                // saveData(); // SaveData é chamado no final de calculateDailyEarning, addExpense, deleteExpense, e ao mudar modo
             }
 
             function addExpense(e) {
@@ -314,6 +377,11 @@
             function updateChart(expensesWithCalculations) {
                 if(state.expenses.length === 0) {
                     chartContainer.classList.add('hidden');
+                    // Garante que o gráfico seja destruído se não houver dados
+                    if (categoryChart) { 
+                        categoryChart.destroy();
+                        categoryChart = null;
+                    }
                     return;
                 }
                 chartContainer.classList.remove('hidden');
@@ -322,41 +390,42 @@
                     if (!acc[expense.category]) {
                         acc[expense.category] = 0;
                     }
+                    // Acumula apenas se o valor for finito (evita Infinity)
                     if(isFinite(expense.daysToPayMonthly)){
                        acc[expense.category] += expense.daysToPayMonthly;
                     }
                     return acc;
                 }, {});
 
+                // Ordena categorias do maior para o menor custo em dias
                 const sortedCategories = Object.keys(categoryData).sort((a, b) => categoryData[b] - categoryData[a]);
                 const chartLabels = sortedCategories;
                 const chartValues = sortedCategories.map(category => categoryData[category]);
                 
+                // Atualiza o gráfico existente ou cria um novo
                 if (categoryChart) {
                     categoryChart.data.labels = chartLabels;
                     categoryChart.data.datasets[0].data = chartValues;
                     categoryChart.update();
                 } else {
                     categoryChart = new Chart(categoryChartCanvas, {
-                        type: 'bar',
+                        type: 'bar', // Gráfico de barras
                         data: {
                             labels: chartLabels,
                             datasets: [{
                                 label: 'Dias de Trabalho por Mês',
                                 data: chartValues,
-                                backgroundColor: 'rgba(59, 130, 246, 0.5)',
-                                borderColor: 'rgba(59, 130, 246, 1)',
+                                backgroundColor: 'rgba(59, 130, 246, 0.5)', // Cor azul com transparência
+                                borderColor: 'rgba(59, 130, 246, 1)', // Cor azul sólida
                                 borderWidth: 1
                             }]
                         },
                         options: {
-                            indexAxis: 'y',
+                            indexAxis: 'y', // Barras Horizontais
                             responsive: true,
                             plugins: {
-                                legend: {
-                                    display: false
-                                },
-                                tooltip: {
+                                legend: { display: false }, // Esconde a legenda
+                                tooltip: { // Configura o que aparece ao passar o rato
                                     callbacks: {
                                         label: function(context) {
                                             return `${context.dataset.label}: ${formatDays(context.raw)} dias`;
@@ -365,12 +434,9 @@
                                 }
                             },
                             scales: {
-                                x: {
-                                    beginAtZero: true,
-                                    title: {
-                                        display: true,
-                                        text: 'Dias'
-                                    }
+                                x: { // Configurações do eixo X (horizontal)
+                                    beginAtZero: true, // Começa do zero
+                                    title: { display: true, text: 'Dias' } // Título do eixo
                                 }
                             }
                         }
@@ -381,120 +447,193 @@
 
             function render() {
                 const totalMonthlyExpenses = state.expenses.reduce((sum, e) => sum + e.amount, 0);
-                const workingDaysPerMonth = state.workingDays > 0 ? state.workingDays / 12 : 0;
+                // Evita divisão por zero se workingDays for 0
+                const workingDaysPerMonth = state.workingDays > 0 ? state.workingDays / 12 : 0; 
                 
+                // --- Cálculo para a Visão Livre ---
                 const totalCommittedMonthly = state.expenses.filter(e => e.type === 'Fixo' || e.type === 'Compromisso').reduce((sum, e) => sum + e.amount, 0);
-                const discretionaryIncome = state.monthlySalary - totalCommittedMonthly;
-                let discretionaryDailyEarning = (discretionaryIncome > 0 && workingDaysPerMonth > 0) ? discretionaryIncome / workingDaysPerMonth : 0;
+                const freeIncome = state.monthlySalary - totalCommittedMonthly;
+                // Garante que freeDailyEarning seja 0 se não houver dias de trabalho ou renda livre
+                let freeDailyEarning = (freeIncome > 0 && workingDaysPerMonth > 0) ? freeIncome / workingDaysPerMonth : 0; 
                 
-                // --- NOVO CÁLCULO (V2.0) ---
                 let reductionPercentage = 0;
-                if (state.dailyEarning > 0) {
-                    let reduction = (state.dailyEarning - discretionaryDailyEarning) / state.dailyEarning;
-                    if (reduction < 0) reduction = 0; // Se o discricionário for maior (raro, mas seguro)
-                    if (reduction > 1) reduction = 1; // Capa em 100%
-                    reductionPercentage = reduction * 100;
+                // Evita divisão por zero se dailyEarning for 0
+                if (state.dailyEarning > 0) { 
+                    let reduction = (state.dailyEarning - freeDailyEarning) / state.dailyEarning;
+                    // Garante que a redução esteja entre 0% e 100%
+                    if (reduction < 0) reduction = 0; 
+                    if (reduction > 1) reduction = 1; 
+                    reductionPercentage = reduction;
                 }
-                // --- FIM DO NOVO CÁLCULO ---
+                // --- Fim do cálculo ---
 
+                // Atualiza explicações e visibilidade do bloco de cálculo livre
                 if (state.calculationMode === 'padrao') {
                     modeExplanation.innerHTML = `<strong>Visão Padrão:</strong> Cada despesa é medida contra o seu ganho diário total.`;
-                    discretionaryBreakdown.classList.add('hidden');
-                } else {
-                    modeExplanation.innerHTML = `<strong>Visão Discricionária:</strong> Despesas <strong>variáveis</strong> são medidas contra o dinheiro que sobra após pagar os custos <strong>Fixos</strong> e <strong>Compromissos</strong>.`;
+                    freeCostBreakdown.classList.add('hidden');
+                } else { // Modo 'livre'
+                    modeExplanation.innerHTML = `<strong>Visão Custo Livre:</strong> Despesas <strong>variáveis</strong> (gastos livres) são medidas contra o dinheiro que sobra após pagar os custos <strong>Fixos</strong> e <strong>Compromissos</strong>.`;
                     
-                    // --- HTML ATUALIZADO (V2.0) ---
-                    discretionaryBreakdown.innerHTML = `
-                        <h4 class="text-md font-semibold text-yellow-900 mb-2 col-span-2">Cálculo do Ganho Diário Discricionário</h4>
+                    freeCostBreakdown.innerHTML = `
+                        <h4 class="text-md font-semibold text-yellow-900 mb-2 col-span-2">Cálculo do Ganho Diário Livre</h4>
                         <dl class="calculation-breakdown text-sm">
                             <dt>Salário Mensal:</dt> <dd>${formatCurrency(state.monthlySalary)}</dd>
                             <dt>(-) Despesas Fixas/Compromissos:</dt> <dd>${formatCurrency(totalCommittedMonthly)}</dd>
-                            <dt>Renda Discricionária Mensal:</dt> <dd class="border-t border-yellow-300 pt-1">${formatCurrency(discretionaryIncome)}</dd>
+                            <dt>Renda Livre Mensal:</dt> <dd class="border-t border-yellow-300 pt-1">${formatCurrency(freeIncome)}</dd>
                             <dt>(÷) Dias de Trabalho no Mês:</dt> <dd>${formatDays(workingDaysPerMonth)}</dd>
-                            <dt class="text-yellow-900">Ganho Diário Discricionário:</dt> <dd class="text-yellow-900 border-t border-yellow-300 pt-1">${formatCurrency(discretionaryDailyEarning)}</dd>
+                            <dt class="text-yellow-900">Ganho Diário Livre:</dt> <dd class="text-yellow-900 border-t border-yellow-300 pt-1">${formatCurrency(freeDailyEarning)}</dd>
                             
                             <dt class="text-red-700 font-medium pt-2">Redução do Poder de Compra:</dt>
-                            <dd class="text-red-700 font-bold text-base pt-2">${formatDays(reductionPercentage)}%</dd>
+                            <dd class="text-red-700 font-bold text-base pt-2">${formatPercent(reductionPercentage)}</dd>
                         </dl>
                         <p class="text-xs text-gray-600 mt-3 col-span-2">
-                            *A "Redução" mostra quanto os seus custos fixos/compromissos diminuem o valor do seu dia de trabalho para pagar gastos variáveis.
+                            *A "Redução" mostra quanto os seus custos fixos/compromissos diminuem o valor do seu dia de trabalho para pagar gastos livres (variáveis).
                         </p>
                     `;
-                    // --- FIM DO HTML ATUALIZADO ---
 
-                    discretionaryBreakdown.classList.remove('hidden');
+                    freeCostBreakdown.classList.remove('hidden');
                 }
 
+                // Limpa a lista e esconde sumário se não houver despesas
                 if (state.expenses.length === 0) {
                     expensesList.innerHTML = `<p class="text-gray-500 text-center py-4">Nenhuma despesa adicionada ainda.</p>`;
                     summary.classList.add('hidden');
-                    updateChart([]);
+                    updateChart([]); // Limpa o gráfico
                     return;
                 }
 
+                // Calcula os dias para cada despesa baseado no modo atual
                 const expensesWithCalculations = state.expenses.map(expense => {
                     let earningRate = state.dailyEarning;
-                    if (state.calculationMode === 'discricionario' && expense.type === 'Variável') {
-                         earningRate = discretionaryDailyEarning > 0 ? discretionaryDailyEarning : Infinity;
+                    // Aplica a taxa 'livre' apenas para despesas variáveis no modo 'livre'
+                    if (state.calculationMode === 'livre' && expense.type === 'Variável') { 
+                         // Usa Infinity se não houver ganho livre, para indicar custo "infinito"
+                         earningRate = freeDailyEarning > 0 ? freeDailyEarning : Infinity; 
                     }
-                    const daysToPayMonthly = earningRate > 0 ? expense.amount / earningRate : Infinity;
+                    // Calcula dias mensais, usa Infinity se earningRate for 0 ou Infinity
+                    const daysToPayMonthly = earningRate > 0 && isFinite(earningRate) ? expense.amount / earningRate : Infinity; 
                     return { ...expense, daysToPayMonthly, daysToPayAnnual: daysToPayMonthly * 12 };
                 });
 
+                // Renderiza a lista de despesas
                 expensesList.innerHTML = '';
                 expensesWithCalculations.forEach(expense => {
                     let typeIndicator;
                     switch (expense.type) {
                         case 'Fixo': typeIndicator = `<span class="text-xs font-semibold bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full">Fixo</span>`; break;
                         case 'Compromisso': typeIndicator = `<span class="text-xs font-semibold bg-orange-200 text-orange-800 px-2 py-0.5 rounded-full">Compromisso</span>`; break;
-                        case 'Variável': typeIndicator = `<span class="text-xs font-semibold bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full">Variável</span>`; break;
+                        // V2.3: Mudança de texto
+                        case 'Variável': typeIndicator = `<span class="text-xs font-semibold bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full">Variável</span>`; break; 
                     }
                     const expenseEl = document.createElement('div');
                     expenseEl.className = 'flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 animate-enter';
                     expenseEl.innerHTML = `<div class="flex-1 space-y-1"><p class="font-semibold text-gray-800">${expense.name}</p><div class="flex items-center gap-2 flex-wrap">${typeIndicator}<p class="text-sm text-gray-500">${expense.category} - ${formatCurrency(expense.amount)}/mês</p></div></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 text-right ml-4 w-auto sm:w-48"><div><p class="font-bold text-lg text-blue-600">${isFinite(expense.daysToPayMonthly) ? formatDays(expense.daysToPayMonthly) : '∞'} dias</p><p class="text-sm text-gray-500">/ mês</p></div><div class="mt-2 sm:mt-0"><p class="font-bold text-lg text-blue-600">${isFinite(expense.daysToPayAnnual) ? formatDays(expense.daysToPayAnnual) : '∞'} dias</p><p class="text-sm text-gray-500">/ ano</p></div></div><button data-id="${expense.id}" class="delete-btn ml-4 text-gray-400 hover:text-red-500 transition-colors p-2 rounded-full flex-shrink-0"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256"><path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"></path></svg></button>`;
-                    setTimeout(() => expenseEl.classList.add('animate-enter-active'), 10);
+                    // Aplica a animação de entrada com um pequeno atraso
+                    setTimeout(() => expenseEl.classList.add('animate-enter-active'), 10); 
                     expensesList.appendChild(expenseEl);
                 });
                 
-                const totalMonthlyDaysWorked = expensesWithCalculations.reduce((sum, exp) => sum + exp.daysToPayMonthly, 0);
-                const totalAnnualDaysWorked = expensesWithCalculations.reduce((sum, exp) => sum + exp.daysToPayAnnual, 0);
+                // Calcula os totais baseados nos dias calculados para o modo atual
+                const totalMonthlyDaysWorked = expensesWithCalculations.reduce((sum, exp) => sum + (isFinite(exp.daysToPayMonthly) ? exp.daysToPayMonthly : 0), 0); // Soma apenas finitos
+                const totalAnnualDaysWorked = expensesWithCalculations.reduce((sum, exp) => sum + (isFinite(exp.daysToPayAnnual) ? exp.daysToPayAnnual : 0), 0); // Soma apenas finitos
                 const remainingMonthly = workingDaysPerMonth - totalMonthlyDaysWorked;
                 const remainingAnnual = state.workingDays - totalAnnualDaysWorked;
                 
+                // Atualiza o sumário
                 totalDaysMonthly.textContent = `${isFinite(totalMonthlyDaysWorked) ? formatDays(totalMonthlyDaysWorked) : '∞'} dias`;
                 totalDaysAnnual.textContent = `${isFinite(totalAnnualDaysWorked) ? formatDays(totalAnnualDaysWorked) : '∞'} dias`;
                 remainingDaysMonthly.textContent = `${isFinite(remainingMonthly) ? formatDays(remainingMonthly) : '∞'} dias`;
                 remainingDaysAnnual.textContent = `${isFinite(remainingAnnual) ? formatDays(remainingAnnual) : '∞'} dias`;
 
+                // Atualiza as descrições do sumário
                 if (state.calculationMode === 'padrao') {
                     totalDaysMonthlyDesc.innerHTML = `Despesas (${formatCurrency(totalMonthlyExpenses)}) ÷ ganho diário (${formatCurrency(state.dailyEarning)}).`;
                     remainingDaysMonthlyDesc.innerHTML = `Dias úteis/mês (${formatDays(workingDaysPerMonth)}) - dias p/ pagar.`;
-                } else {
-                    totalDaysMonthlyDesc.innerHTML = `Soma dos dias de cada despesa (com régua discricionária).`;
+                } else { // Modo 'livre'
+                    // V2.3: Mudança de texto
+                    totalDaysMonthlyDesc.innerHTML = `Soma dos dias de cada despesa (com régua de custo livre).`; 
                     remainingDaysMonthlyDesc.innerHTML = `Dias úteis/mês (${formatDays(workingDaysPerMonth)}) - dias p/ pagar.`;
                 }
                 totalDaysAnnualDesc.innerHTML = `Projeção anual do cálculo mensal.`;
                 remainingDaysAnnualDesc.innerHTML = `Dias úteis/ano (${formatDays(state.workingDays)}) - dias p/ pagar.`;
 
-                summary.classList.remove('hidden');
-                updateChart(expensesWithCalculations);
+                summary.classList.remove('hidden'); // Mostra o sumário
+                updateChart(expensesWithCalculations); // Atualiza o gráfico
+            }
+            
+            // --- Funções do Modal Pix ---
+            function openPixModal() {
+                pixModal.classList.remove('hidden');
+                setTimeout(() => {
+                    pixModalBackdrop.classList.remove('opacity-0');
+                    pixModalContent.classList.remove('opacity-0', 'scale-95');
+                }, 10); 
             }
 
+            function closePixModal() {
+                pixModalBackdrop.classList.add('opacity-0');
+                pixModalContent.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => {
+                    pixModal.classList.add('hidden');
+                    pixCopyFeedback.classList.add('hidden'); 
+                    pixCopyBtn.innerText = 'Copiar'; 
+                }, 300); 
+            }
+
+            function copyPixKey() {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(pixKeyInput.value).then(() => {
+                        showCopyFeedback();
+                    }).catch(err => { fallbackCopyText(); });
+                } else { fallbackCopyText(); }
+            }
+
+            function fallbackCopyText() {
+                pixKeyInput.select(); 
+                try {
+                    var successful = document.execCommand('copy');
+                    if(successful) showCopyFeedback();
+                    else showCopyError();
+                } catch (err) { showCopyError(); }
+                window.getSelection().removeAllRanges(); 
+            }
+
+            function showCopyFeedback() {
+                pixCopyFeedback.classList.remove('hidden');
+                pixCopyBtn.innerText = 'Copiado!';
+                setTimeout(() => {
+                    pixCopyFeedback.classList.add('hidden');
+                    pixCopyBtn.innerText = 'Copiar';
+                }, 2000);
+            }
+            
+            function showCopyError() {
+                 alert('Não foi possível copiar a chave. Por favor, copie manualmente.');
+            }
+            
+            // --- Event Listeners ---
             monthlySalaryInput.addEventListener('input', calculateDailyEarning);
             daysPerWeekInput.addEventListener('input', calculateDailyEarning);
             expenseForm.addEventListener('submit', addExpense);
             calculationModeSelect.addEventListener('change', (e) => {
                 state.calculationMode = e.target.value;
-                render();
-                saveData();
+                render(); // Re-renderiza com o novo modo
+                saveData(); // Salva a preferência do modo
             });
             expensesList.addEventListener('click', (e) => {
                 const deleteBtn = e.target.closest('.delete-btn');
                 if (deleteBtn) deleteExpense(parseInt(deleteBtn.dataset.id, 10));
             });
             clearDataBtn.addEventListener('click', clearData);
+            
+            // Eventos do Modal
+            donateBtn.addEventListener('click', openPixModal);
+            pixModalClose.addEventListener('click', closePixModal);
+            pixModalBackdrop.addEventListener('click', closePixModal);
+            pixCopyBtn.addEventListener('click', copyPixKey);
 
-            loadData();
+            // Carga Inicial
+            loadData(); // Carrega os dados salvos e renderiza
         });
     </script>
 
